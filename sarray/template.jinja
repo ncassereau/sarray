@@ -1,0 +1,38 @@
+{{ jobs[0].shebang }}
+{% for key, val in jobs[0].slurm_options.items() if key != 'array' %}
+{% if val == true %}
+#SBATCH --{{ key }}
+{% else %}
+#SBATCH --{{ key }}={{ val }}
+{% endif %}
+{% endfor %}
+#SBATCH --array=0-{{ total_tasks - 1 }}{% if throttle %}%{{ throttle }}{% endif %}
+
+
+GLOBAL_ID=${SLURM_ARRAY_TASK_ID:-0}
+
+OFFSETS=({{ offsets | join(' ') }})
+SARRAY_JOB_ID=0
+for (( i=0; i<{{ jobs | length }}; i++ )); do
+    if (( GLOBAL_ID >= OFFSETS[i] )); then
+        SARRAY_JOB_ID=$i
+    fi
+done
+SARRAY_TASK_INDEX=$(( GLOBAL_ID - OFFSETS[SARRAY_JOB_ID] ))
+
+case $SARRAY_JOB_ID in
+{% for job in jobs %}
+    {{ loop.index0 }})
+        task_ids=({{ job.tasks | join(' ') }})
+        export SLURM_ARRAY_TASK_ID=${task_ids[$SARRAY_TASK_INDEX]}
+        export SLURM_ARRAY_TASK_COUNT={{ job.tasks | length }}
+        export SLURM_ARRAY_TASK_MIN={{ job.tasks | min }}
+        export SLURM_ARRAY_TASK_MAX={{ job.tasks | max }}
+{{ job.get_script() | indent(8, first=True) }}
+        ;;
+{% endfor %}
+    *)
+        echo "Error: unknown job ID $SARRAY_JOB_ID" >&2
+        exit 1
+        ;;
+esac
