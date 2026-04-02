@@ -7,11 +7,21 @@ name = "sarray"
 version = "0.1.0"
 description = "Meta scheduler merging Slurm Arrays" 
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.8"
 license = {text = "Apache-2.0"}
 authors = [
   {name = "Nathan Cassereau", email = "nathan.cassereau@polytechnique.edu"},
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
 dependencies = [
     "jinja2>=3.1.6",
     "rich>=14.3.3",
@@ -22,6 +32,10 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
 ]
+
+
+[project.urls]
+"Source" = "https://github.com/ncassereau/sarray"
 
 [tool.setuptools.package-data]
 sarray = ["*.jinja"]
