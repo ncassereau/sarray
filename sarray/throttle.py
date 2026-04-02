@@ -80,7 +80,7 @@ def cmd_throttle(config: ThrottleConfig):
     running = sorted(
         [r for r in records if r.get("JobState") == "RUNNING"],
         key=lambda r: r.get("StartTime", ""),
-        reverse=True,
+        reverse=False,
     )
     excess = running[config.max_tasks :]
     if not excess:
@@ -91,22 +91,24 @@ def cmd_throttle(config: ThrottleConfig):
         console.print(f"[yellow]Requeueing {len(excess)} excess running task(s)...[/]")
         for r in excess:
             jid = r["JobId"]
+            display_id = f"{r['ArrayJobId']}_{r['ArrayTaskId']}"
             res = _scontrol("requeue", jid)
             if res.returncode != 0:
                 err_console.print(
-                    f"[bold red]Failed to requeue {jid}:[/] {res.stderr.strip()}"
+                    f"[bold red]Failed to requeue {display_id}:[/] {res.stderr.strip()}"
                 )
             else:
-                console.print(f"  [dim]requeued {jid}[/]")
+                console.print(f"  [dim]requeued {display_id}[/]")
 
     if config.kill:
         console.print(f"[yellow]Cancelling {len(excess)} excess running task(s)...[/]")
         for r in excess:
             jid = r["JobId"]
+            display_id = f"{r['ArrayJobId']}_{r['ArrayTaskId']}"
             res = subprocess.run(["scancel", jid], capture_output=True, text=True)
             if res.returncode != 0:
                 err_console.print(
-                    f"[bold red]Failed to cancel {jid}:[/] {res.stderr.strip()}"
+                    f"[bold red]Failed to cancel {display_id}:[/] {res.stderr.strip()}"
                 )
             else:
-                console.print(f"  [dim]cancelled {jid}[/]")
+                console.print(f"  [dim]cancelled {display_id}[/]")
