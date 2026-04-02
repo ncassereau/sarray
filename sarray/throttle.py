@@ -15,6 +15,7 @@ class ThrottleConfig:
         alias=["-n", "--max", "--max-tasks"], metavar="N"
     )
     kill: bool = simple_parsing.field(default=False, alias=["-k", "--kill"])
+    requeue: bool = simple_parsing.field(default=False, alias=["-r", "--requeue"])
 
 
 def _scontrol(*args: str) -> subprocess.CompletedProcess:
@@ -72,23 +73,40 @@ def cmd_throttle(config: ThrottleConfig):
         f"for job [bold]{config.jobid}[/].[/]"
     )
 
-    # 3. Requeue excess running tasks if requested
-    if not config.kill:
+    # 3. Act on excess running tasks if requested
+    if not config.kill and not config.requeue:
         return
 
-    running = [r for r in records if r.get("JobState") == "RUNNING"]
+    running = sorted(
+        [r for r in records if r.get("JobState") == "RUNNING"],
+        key=lambda r: r.get("StartTime", ""),
+        reverse=True,
+    )
     excess = running[config.max_tasks :]
     if not excess:
-        console.print("[dim]No excess running tasks to requeue.[/]")
+        console.print("[dim]No excess running tasks to act on.[/]")
         return
 
-    console.print(f"[yellow]Requeueing {len(excess)} excess running task(s)...[/]")
-    for r in excess:
-        jid = r["JobId"]
-        res = _scontrol("requeue", jid)
-        if res.returncode != 0:
-            err_console.print(
-                f"[bold red]Failed to requeue {jid}:[/] {res.stderr.strip()}"
-            )
-        else:
-            console.print(f"  [dim]requeued {jid}[/]")
+    if config.requeue:
+        console.print(f"[yellow]Requeueing {len(excess)} excess running task(s)...[/]")
+        for r in excess:
+            jid = r["JobId"]
+            res = _scontrol("requeue", jid)
+            if res.returncode != 0:
+                err_console.print(
+                    f"[bold red]Failed to requeue {jid}:[/] {res.stderr.strip()}"
+                )
+            else:
+                console.print(f"  [dim]requeued {jid}[/]")
+
+    if config.kill:
+        console.print(f"[yellow]Cancelling {len(excess)} excess running task(s)...[/]")
+        for r in excess:
+            jid = r["JobId"]
+            res = subprocess.run(["scancel", jid], capture_output=True, text=True)
+            if res.returncode != 0:
+                err_console.print(
+                    f"[bold red]Failed to cancel {jid}:[/] {res.stderr.strip()}"
+                )
+            else:
+                console.print(f"  [dim]cancelled {jid}[/]")

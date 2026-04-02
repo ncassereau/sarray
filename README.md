@@ -141,7 +141,7 @@ Discard the current listen session queue and exit the subshell.
 
 ---
 
-### `sarray throttle JOBID -n N [--kill]`
+### `sarray throttle JOBID -n N [--requeue] [--kill]`
 
 Update the concurrent task limit of a running job array without cancelling it.
 
@@ -149,13 +149,19 @@ Update the concurrent task limit of a running job array without cancelling it.
 |---|---|
 | `JOBID` | ID of the running job array. |
 | `-n`, `--max`, `--max-tasks N` | New maximum number of simultaneously running tasks. |
-| `-k`, `--kill` | Requeue tasks currently running above the new limit. |
+| `-r`, `--requeue` | Requeue the most recently started tasks running above the new limit (they will run again later). |
+| `-k`, `--kill` | Cancel (via `scancel`) the most recently started tasks running above the new limit. |
+
+Both `--requeue` and `--kill` can be combined. Excess tasks are always selected by recency — the most recently started ones are acted on first.
 
 ```bash
 # Slow down a running array to 2 concurrent tasks
 sarray throttle 123456 --max 2
 
-# Slow down and immediately requeue the excess running tasks
+# Slow down and requeue the excess running tasks (they will be rescheduled)
+sarray throttle 123456 --max 2 --requeue
+
+# Slow down and permanently cancel the excess running tasks
 sarray throttle 123456 --max 2 --kill
 ```
 

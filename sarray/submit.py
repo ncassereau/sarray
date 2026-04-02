@@ -38,7 +38,8 @@ class SubmitConfig:
     dry_run: bool = simple_parsing.field(
         default=False,
         alias=["-n", "--dry-run"],
-        help="Print the generated script to stdout without submitting",
+        action="store_true",
+        help="Write the generated script to disk and print it, but do not submit",
     )
 
 
@@ -64,11 +65,11 @@ def submit(
     jobs: list[SlurmJob], output: Path | None, throttle: int | None, dry_run: bool
 ):
     script = SlurmJobList.from_slurm_jobs(jobs).make_slurm_job_array(throttle=throttle)
+    script_file = output or Path("sarray.slurm")
+    script_file.write_text(script)
     if dry_run:
         console.print(Syntax(script, "bash", theme="monokai", line_numbers=True))
         return
-    script_file = output or Path("sarray.slurm")
-    script_file.write_text(script)
     real_sbatch = os.environ.get("SARRAY_REAL_SBATCH", "sbatch")
     result = subprocess.run(
         [real_sbatch, str(script_file)], capture_output=True, text=True

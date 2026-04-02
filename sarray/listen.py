@@ -6,9 +6,13 @@ from pathlib import Path
 
 _BASH_INIT = """\
 _SARRAY_DIR=$(pwd)
+_SARRAY_PATH=$PATH
+_SARRAY_CONDA=${CONDA_PREFIX:-}
 [ -f ~/.bashrc ] && source ~/.bashrc
+export PATH=$_SARRAY_PATH
+[ -n "$_SARRAY_CONDA" ] && export CONDA_PREFIX=$_SARRAY_CONDA
 cd "$_SARRAY_DIR"
-unset _SARRAY_DIR
+unset _SARRAY_DIR _SARRAY_PATH _SARRAY_CONDA
 sarray() {
     command sarray "$@"
     local _ret=$?

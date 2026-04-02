@@ -6,6 +6,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from sarray.sbatch_parser import parse_sbatch_argv
+
 
 def quote_shell(value):
     return shlex.quote(str(value))
@@ -64,11 +66,10 @@ class SlurmJob:
 
             for line in body:
                 if line.lstrip().startswith("#SBATCH "):
-                    opt_part = line.lstrip()[8:].strip()
-                    parts = re.split(r"[= ]", opt_part, maxsplit=1)
-                    key = parts[0].strip().lstrip("-")
-                    val = parts[1].strip() if len(parts) > 1 else True
-                    options[key] = val
+                    opt_str = re.sub(r"\s+#.*$", "", line.lstrip()[8:]).strip()
+                    tokens = shlex.split(opt_str)
+                    opts, _, _ = parse_sbatch_argv(tokens)
+                    options.update(opts)
                 else:
                     script_lines.append(line)
 

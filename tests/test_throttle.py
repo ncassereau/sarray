@@ -117,7 +117,7 @@ def test_throttle_kill_no_excess(mock_sc):
 
 
 @patch("sarray.throttle._scontrol")
-def test_throttle_kill_requeues_excess(mock_sc):
+def test_throttle_requeue_requeues_excess(mock_sc):
     # 3 running tasks, max_tasks=1 → 2 excess to requeue
     records = "\n".join(
         [
@@ -130,12 +130,11 @@ def test_throttle_kill_requeues_excess(mock_sc):
     mock_sc.side_effect = [
         _ok(records + "\n"),  # show job (initial check)
         _ok(),  # update throttle
-        _ok(records + "\n"),  # show job (fetch running tasks)
         _ok(),  # requeue 100_1
         _ok(),  # requeue 100_2
     ]
 
-    cmd_throttle(ThrottleConfig(jobid=100, max_tasks=1, kill=True))
+    cmd_throttle(ThrottleConfig(jobid=100, max_tasks=1, requeue=True))
 
     requeue_calls = [
         c for c in mock_sc.call_args_list if c.args and c.args[0] == "requeue"
