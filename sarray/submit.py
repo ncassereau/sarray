@@ -1,6 +1,5 @@
 import os
 import shlex
-import signal
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -103,7 +102,6 @@ def cmd_submit(config: SubmitConfig):
     queue_path = Path(queue_file)
     if not queue_path.exists() or queue_path.stat().st_size == 0:
         err_console.print("[yellow]No jobs in queue.[/]")
-        os.kill(os.getppid(), signal.SIGTERM)
         return
 
     with queue_path.open("r") as f:
@@ -111,7 +109,6 @@ def cmd_submit(config: SubmitConfig):
 
     if not jobs:
         err_console.print("[yellow]No jobs in queue.[/]")
-        os.kill(os.getppid(), signal.SIGTERM)
         return
 
     try:
@@ -119,4 +116,3 @@ def cmd_submit(config: SubmitConfig):
     finally:
         if not config.dry_run:
             queue_path.unlink(missing_ok=True)
-            os.kill(os.getppid(), signal.SIGTERM)

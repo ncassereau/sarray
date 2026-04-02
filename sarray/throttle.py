@@ -11,7 +11,9 @@ from sarray.utils import console, err_console
 @dataclass
 class ThrottleConfig:
     jobid: int = simple_parsing.field(positional=True, metavar="JOBID")
-    throttle: int = simple_parsing.field(alias=["-t", "--throttle"], metavar="N")
+    max_tasks: int = simple_parsing.field(
+        alias=["-n", "--max", "--max-tasks"], metavar="N"
+    )
     kill: bool = simple_parsing.field(default=False, alias=["-k", "--kill"])
 
 
@@ -60,13 +62,13 @@ def cmd_throttle(config: ThrottleConfig):
 
     # 2. Update throttle
     result = _scontrol(
-        "update", f"JobId={config.jobid}", f"ArrayTaskThrottle={config.throttle}"
+        "update", f"JobId={config.jobid}", f"ArrayTaskThrottle={config.max_tasks}"
     )
     if result.returncode != 0:
         err_console.print(f"[bold red]scontrol error:[/]\n{result.stderr.strip()}")
         sys.exit(result.returncode)
     console.print(
-        f"[green]Throttle updated to [bold]{config.throttle}[/] "
+        f"[green]Throttle updated to [bold]{config.max_tasks}[/] "
         f"for job [bold]{config.jobid}[/].[/]"
     )
 
@@ -75,7 +77,7 @@ def cmd_throttle(config: ThrottleConfig):
         return
 
     running = [r for r in records if r.get("JobState") == "RUNNING"]
-    excess = running[config.throttle :]
+    excess = running[config.max_tasks :]
     if not excess:
         console.print("[dim]No excess running tasks to requeue.[/]")
         return

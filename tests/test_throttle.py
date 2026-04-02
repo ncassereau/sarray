@@ -63,7 +63,7 @@ def test_throttle_basic(mock_sc):
     record = _make_record("100_0")
     mock_sc.side_effect = [_ok(record + "\n"), _ok()]  # show job, update
 
-    cmd_throttle(ThrottleConfig(jobid=100, throttle=2))
+    cmd_throttle(ThrottleConfig(jobid=100, max_tasks=2))
 
     mock_sc.assert_any_call("update", "JobId=100", "ArrayTaskThrottle=2")
 
@@ -73,7 +73,7 @@ def test_throttle_job_not_found(mock_sc):
     mock_sc.return_value = _fail("not found")
 
     with pytest.raises(SystemExit):
-        cmd_throttle(ThrottleConfig(jobid=999, throttle=2))
+        cmd_throttle(ThrottleConfig(jobid=999, max_tasks=2))
 
 
 @patch("sarray.throttle._scontrol")
@@ -83,7 +83,7 @@ def test_throttle_not_array(mock_sc):
     mock_sc.return_value = _ok(record + "\n")
 
     with pytest.raises(SystemExit):
-        cmd_throttle(ThrottleConfig(jobid=100, throttle=2))
+        cmd_throttle(ThrottleConfig(jobid=100, max_tasks=2))
 
 
 @patch("sarray.throttle._scontrol")
@@ -92,12 +92,12 @@ def test_throttle_wrong_owner(mock_sc):
     mock_sc.return_value = _ok(record + "\n")
 
     with pytest.raises(SystemExit):
-        cmd_throttle(ThrottleConfig(jobid=100, throttle=2))
+        cmd_throttle(ThrottleConfig(jobid=100, max_tasks=2))
 
 
 @patch("sarray.throttle._scontrol")
 def test_throttle_kill_no_excess(mock_sc):
-    # 2 running tasks, throttle=3 → nothing to requeue
+    # 2 running tasks, max_tasks=3 → nothing to requeue
     records = "\n".join(
         [
             _make_record("100_0", "RUNNING"),
@@ -107,7 +107,7 @@ def test_throttle_kill_no_excess(mock_sc):
     )
     mock_sc.side_effect = [_ok(records + "\n"), _ok(), _ok(records + "\n")]
 
-    cmd_throttle(ThrottleConfig(jobid=100, throttle=3, kill=True))
+    cmd_throttle(ThrottleConfig(jobid=100, max_tasks=3, kill=True))
 
     # requeue should NOT be called
     requeue_calls = [
@@ -118,7 +118,7 @@ def test_throttle_kill_no_excess(mock_sc):
 
 @patch("sarray.throttle._scontrol")
 def test_throttle_kill_requeues_excess(mock_sc):
-    # 3 running tasks, throttle=1 → 2 excess to requeue
+    # 3 running tasks, max_tasks=1 → 2 excess to requeue
     records = "\n".join(
         [
             _make_record("100_0", "RUNNING"),
@@ -135,7 +135,7 @@ def test_throttle_kill_requeues_excess(mock_sc):
         _ok(),  # requeue 100_2
     ]
 
-    cmd_throttle(ThrottleConfig(jobid=100, throttle=1, kill=True))
+    cmd_throttle(ThrottleConfig(jobid=100, max_tasks=1, kill=True))
 
     requeue_calls = [
         c for c in mock_sc.call_args_list if c.args and c.args[0] == "requeue"
@@ -151,4 +151,4 @@ def test_throttle_update_failure(mock_sc):
     mock_sc.side_effect = [_ok(record + "\n"), _fail("permission denied")]
 
     with pytest.raises(SystemExit):
-        cmd_throttle(ThrottleConfig(jobid=100, throttle=2))
+        cmd_throttle(ThrottleConfig(jobid=100, max_tasks=2))

@@ -1,5 +1,4 @@
 import os
-import signal
 import sys
 from pathlib import Path
 
@@ -14,4 +13,3 @@ def cmd_cancel():
 
     Path(queue_file).unlink(missing_ok=True)
     console.print("[bold green]Listen session cancelled.[/]")
-    os.kill(os.getppid(), signal.SIGTERM)

@@ -9,7 +9,12 @@ _SARRAY_DIR=$(pwd)
 [ -f ~/.bashrc ] && source ~/.bashrc
 cd "$_SARRAY_DIR"
 unset _SARRAY_DIR
-trap 'exit' TERM
+sarray() {
+    command sarray "$@"
+    local _ret=$?
+    [[ "$1" == submit || "$1" == cancel ]] && exit $_ret
+    return $_ret
+}
 PS1='\\[\\e[1;33m\\][sarray]\\[\\e[0m\\] '$PS1
 """
 
