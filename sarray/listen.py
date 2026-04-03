@@ -16,7 +16,7 @@ unset _SARRAY_DIR _SARRAY_PATH _SARRAY_CONDA
 sarray() {
     command sarray "$@"
     local _ret=$?
-    [[ "$1" == submit || "$1" == cancel ]] && exit $_ret
+    [[ "$1" == submit || "$1" == cancel ]] && { exec 2>/dev/null; exit $_ret; }
     return $_ret
 }
 PS1='\\[\\e[1;33m\\][sarray]\\[\\e[0m\\] '$PS1
