@@ -166,7 +166,7 @@ Update the concurrent task limit of a running job array without cancelling it.
 | `-r`, `--requeue` | Requeue the most recently started tasks running above the new limit (they will run again later). |
 | `-k`, `--kill` | Cancel (via `scancel`) the most recently started tasks running above the new limit. |
 
-Both `--requeue` and `--kill` can be combined. Excess tasks are always selected by recency — the most recently started ones are acted on first.
+Excess tasks are always selected by recency — the most recently started ones are acted on first. `--requeue` and `--kill` are mutually exclusive.
 
 ```bash
 # Slow down a running array to 2 concurrent tasks

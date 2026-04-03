@@ -76,6 +76,11 @@ def cmd_throttle(config: ThrottleConfig):
     )
 
     # 3. Act on excess running tasks if requested
+    if config.kill and config.requeue:
+        err_console.print(
+            "[bold red]Error:[/] --kill and --requeue are mutually exclusive."
+        )
+        sys.exit(1)
     if not config.kill and not config.requeue:
         return
 
