@@ -22,13 +22,13 @@ jobs:
         run: uv sync --group dev
 
       - name: Format check
-        run: make format
+        run: uvx ruff format --check
 
       - name: Lint check
-        run: make check
+        run: uvx ruff check
 
       - name: Type check
-        run: make ty
+        run: uvx ty check
 
       - name: Tests
-        run: make test
+        run: uv run pytest tests/ -vvv
