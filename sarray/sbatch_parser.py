@@ -2,14 +2,12 @@
 sbatch argument parser based on https://slurm.schedmd.com/sbatch.html
 """
 
-from __future__ import annotations
-
-import argparse
+from argparse import ArgumentParser
 from pathlib import Path
 
 
-def _make_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(add_help=False)
+def make_parser() -> ArgumentParser:
+    p = ArgumentParser(add_help=False)
 
     def opt(*flags: str):
         p.add_argument(*flags, default=None)
@@ -136,7 +134,7 @@ def _make_parser() -> argparse.ArgumentParser:
     return p
 
 
-_PARSER = _make_parser()
+_PARSER = make_parser()
 
 
 def parse_sbatch_argv(

@@ -25,8 +25,9 @@ class SubmitConfig:
             "Omit to use the active listen session."
         ),
     )
-    output: Path | None = simple_parsing.field(
-        default=None,
+    output: Path = simple_parsing.field(
+        default=Path("sarray.slurm"),
+        type=Path,
         alias=["-o", "--output"],
         help="Save the generated script to this file (and still submit it)",
     )
@@ -62,10 +63,9 @@ def parse_lines(lines: IO[str]) -> list[SlurmJob]:
 
 
 def submit(
-    jobs: list[SlurmJob], output: Path | None, throttle: int | None, dry_run: bool
+    jobs: list[SlurmJob], script_file: Path, throttle: int | None, dry_run: bool
 ):
     script = SlurmJobList.from_slurm_jobs(jobs).make_slurm_job_array(throttle=throttle)
-    script_file = output or Path("sarray.slurm")
     script_file.write_text(script)
     if dry_run:
         console.print(Syntax(script, "bash", theme="monokai", line_numbers=True))

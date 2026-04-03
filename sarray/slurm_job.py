@@ -55,25 +55,26 @@ class SlurmJob:
         script_lines = []
         with slurm_file.open("r") as f:
             lines = f.readlines()
-            if not lines:
-                return cls(shebang, {}, "", list(args))
+        if not lines:
+            return cls(shebang, {}, "", list(args))
 
-            if lines[0].startswith("#!"):
-                shebang = lines[0].strip()
-                body = lines[1:]
+        if lines[0].startswith("#!"):
+            shebang = lines[0].strip()
+            body = lines[1:]
+        else:
+            body = lines
+
+        sbatch_args = []
+        for line in body:
+            if line.lstrip().startswith("#SBATCH "):
+                # ignore end of line comments and accumulate SBATCH args
+                opt_str = re.sub(r"\s+#.*$", "", line.lstrip()[8:]).strip()
+                sbatch_args.extend(shlex.split(opt_str))
             else:
-                body = lines
-
-            sbatch_args = []
-            for line in body:
-                if line.lstrip().startswith("#SBATCH "):
-                    opt_str = re.sub(r"\s+#.*$", "", line.lstrip()[8:]).strip()
-                    sbatch_args.extend(shlex.split(opt_str))
-                else:
-                    script_lines.append(line)
-            if sbatch_args:
-                opts, _, _ = parse_sbatch_argv(sbatch_args)
-                options.update(opts)
+                script_lines.append(line)
+        if sbatch_args:
+            opts, _, _ = parse_sbatch_argv(sbatch_args)
+            options.update(opts)
 
         # CLI options override #SBATCH directives from the file
         if cli_opts:
@@ -125,8 +126,8 @@ class SlurmJobList:
     offsets: list[int]
     total_tasks: int
 
-    @classmethod
-    def _check_compatible(cls, jobs: list[SlurmJob]) -> None:
+    @staticmethod
+    def check_compatible(jobs: list[SlurmJob]) -> None:
         if len(jobs) < 2:
             return
         ref = {k: v for k, v in jobs[0].slurm_options.items() if k != "array"}
@@ -143,7 +144,7 @@ class SlurmJobList:
 
     @classmethod
     def from_slurm_jobs(cls, jobs: list[SlurmJob]) -> "SlurmJobList":
-        cls._check_compatible(jobs)
+        cls.check_compatible(jobs)
         offsets = []
         current_offset = 0
 

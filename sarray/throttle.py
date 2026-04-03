@@ -18,14 +18,14 @@ class ThrottleConfig:
     requeue: bool = simple_parsing.field(default=False, alias=["-r", "--requeue"])
 
 
-def _scontrol(*args: str) -> subprocess.CompletedProcess:
+def scontrol(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["scontrol", *args], capture_output=True, text=True)
 
 
-def _parse_fields(line: str) -> dict[str, str]:
+def parse_scontrol_fields(line: str) -> dict[str, str]:
     """Parse a scontrol -o line into a key→value dict."""
     fields = {}
-    for token in line.split():
+    for token in line.strip().split():
         if "=" in token:
             k, _, v = token.partition("=")
             fields[k] = v
@@ -34,13 +34,15 @@ def _parse_fields(line: str) -> dict[str, str]:
 
 def cmd_throttle(config: ThrottleConfig):
     # 1. Fetch job info (one record per line with -o)
-    result = _scontrol("show", "-o", "job", str(config.jobid))
+    result = scontrol("show", "-o", "job", str(config.jobid))
     if result.returncode != 0:
         err_console.print(f"[bold red]Error:[/] job {config.jobid} not found.")
         sys.exit(1)
 
     records = [
-        _parse_fields(line) for line in result.stdout.splitlines() if line.strip()
+        parse_scontrol_fields(line)
+        for line in result.stdout.splitlines()
+        if line.strip()
     ]
     if not records:
         err_console.print(f"[bold red]Error:[/] job {config.jobid} not found.")
@@ -62,7 +64,7 @@ def cmd_throttle(config: ThrottleConfig):
         sys.exit(1)
 
     # 2. Update throttle
-    result = _scontrol(
+    result = scontrol(
         "update", f"JobId={config.jobid}", f"ArrayTaskThrottle={config.max_tasks}"
     )
     if result.returncode != 0:
@@ -92,7 +94,7 @@ def cmd_throttle(config: ThrottleConfig):
         for r in excess:
             jid = r["JobId"]
             display_id = f"{r['ArrayJobId']}_{r['ArrayTaskId']}"
-            res = _scontrol("requeue", jid)
+            res = scontrol("requeue", jid)
             if res.returncode != 0:
                 err_console.print(
                     f"[bold red]Failed to requeue {display_id}:[/] {res.stderr.strip()}"
