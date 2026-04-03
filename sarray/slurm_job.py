@@ -64,14 +64,16 @@ class SlurmJob:
             else:
                 body = lines
 
+            sbatch_args = []
             for line in body:
                 if line.lstrip().startswith("#SBATCH "):
                     opt_str = re.sub(r"\s+#.*$", "", line.lstrip()[8:]).strip()
-                    tokens = shlex.split(opt_str)
-                    opts, _, _ = parse_sbatch_argv(tokens)
-                    options.update(opts)
+                    sbatch_args.extend(shlex.split(opt_str))
                 else:
                     script_lines.append(line)
+            if sbatch_args:
+                opts, _, _ = parse_sbatch_argv(sbatch_args)
+                options.update(opts)
 
         # CLI options override #SBATCH directives from the file
         if cli_opts:
