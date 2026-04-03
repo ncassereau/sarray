@@ -1,5 +1,5 @@
 {{ jobs[0].shebang }}
-{% for key, val in jobs[0].slurm_options.items() if key != 'array' %}
+{% for key, val in slurm_options.items() if key != 'array' %}
 {% if val == true %}
 #SBATCH --{{ key }}
 {% else %}

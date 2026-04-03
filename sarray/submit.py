@@ -63,9 +63,15 @@ def parse_lines(lines: IO[str]) -> list[SlurmJob]:
 
 
 def submit(
-    jobs: list[SlurmJob], script_file: Path, throttle: int | None, dry_run: bool
+    jobs: list[SlurmJob],
+    script_file: Path,
+    throttle: int | None,
+    dry_run: bool,
+    overrides: dict[str, str | bool] | None = None,
 ):
-    script = SlurmJobList.from_slurm_jobs(jobs).make_slurm_job_array(throttle=throttle)
+    script = SlurmJobList.from_slurm_jobs(jobs).make_slurm_job_array(
+        throttle=throttle, overrides=overrides
+    )
     script_file.write_text(script)
     if dry_run:
         console.print(Syntax(script, "bash", theme="monokai", line_numbers=True))
@@ -80,7 +86,10 @@ def submit(
         sys.exit(result.returncode)
 
 
-def cmd_submit(config: SubmitConfig):
+def cmd_submit(config: SubmitConfig, extra_args: list[str] | None = None):
+    overrides = {}
+    if extra_args:
+        overrides, _, _ = parse_sbatch_argv(extra_args)
 
     if config.filename is not None:
         if config.filename == Path("-"):
@@ -88,7 +97,7 @@ def cmd_submit(config: SubmitConfig):
         else:
             with config.filename.open() as f:
                 jobs = parse_lines(f)
-        submit(jobs, config.output, config.throttle, config.dry_run)
+        submit(jobs, config.output, config.throttle, config.dry_run, overrides)
         return
 
     # No file given: use the active listen session queue
@@ -113,7 +122,7 @@ def cmd_submit(config: SubmitConfig):
         return
 
     try:
-        submit(jobs, config.output, config.throttle, config.dry_run)
+        submit(jobs, config.output, config.throttle, config.dry_run, overrides)
     finally:
         if not config.dry_run:
             queue_path.unlink(missing_ok=True)

@@ -25,12 +25,12 @@ def main():
     p_throttle = sub.add_parser("throttle")
     p_throttle.add_arguments(ThrottleConfig, dest="config")
 
-    args = parser.parse_args()
+    args, extra_args = parser.parse_known_args()
 
     if args.command == "listen":
         cmd_listen()
     elif args.command == "submit":
-        cmd_submit(args.config)
+        cmd_submit(args.config, extra_args)
     elif args.command == "cancel":
         cmd_cancel()
     elif args.command == "throttle":

@@ -168,7 +168,11 @@ class SlurmJobList:
         slurm_task_id = target_job.tasks[relative_index]
         return target_job, slurm_task_id
 
-    def make_slurm_job_array(self, throttle: int | None = None) -> str:
+    def make_slurm_job_array(
+        self,
+        throttle: int | None = None,
+        overrides: dict[str, str | bool] | None = None,
+    ) -> str:
         template_dir = Path(__file__).parent
         env = Environment(
             loader=FileSystemLoader(str(template_dir)),
@@ -179,8 +183,11 @@ class SlurmJobList:
 
         template = env.get_template("template.jinja")
 
+        slurm_options = {**self.jobs[0].slurm_options, **(overrides or {})}
+
         return template.render(
             jobs=self.jobs,
+            slurm_options=slurm_options,
             offsets=self.offsets,
             total_tasks=self.total_tasks,
             throttle=throttle,

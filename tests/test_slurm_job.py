@@ -261,3 +261,28 @@ def test_get_job_info_out_of_bounds():
         jl.get_job_info(3)
     with pytest.raises(IndexError):
         jl.get_job_info(-1)
+
+
+# ---------------------------------------------------------------------------
+# SlurmJobList.make_slurm_job_array — submit-time overrides
+# ---------------------------------------------------------------------------
+
+
+def test_overrides_appear_in_script():
+    jl = SlurmJobList.from_slurm_jobs([make_job("0-2")])
+    script = jl.make_slurm_job_array(overrides={"dependency": "aftercorr:42"})
+    assert "#SBATCH --dependency=aftercorr:42" in script
+
+
+def test_overrides_replace_existing_option():
+    jl = SlurmJobList.from_slurm_jobs([make_job("0-2")])
+    script = jl.make_slurm_job_array(overrides={"mem": "99GB"})
+    assert "#SBATCH --mem=99GB" in script
+    assert "#SBATCH --mem=1GB" not in script
+
+
+def test_overrides_do_not_mutate_jobs():
+    j = make_job("0-2")
+    jl = SlurmJobList.from_slurm_jobs([j])
+    jl.make_slurm_job_array(overrides={"dependency": "aftercorr:42"})
+    assert "dependency" not in j.slurm_options
