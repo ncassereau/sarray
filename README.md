@@ -117,8 +117,22 @@ Generate and submit the merged job array.
 | `-o`, `--output FILE` | Save the generated script to this file (default: `sarray.slurm` in the current directory). |
 | `-n`, `--dry-run` | Print the generated script to stdout (syntax-highlighted) without submitting. |
 | `-t`, `--throttle N` | Limit the number of simultaneously running tasks (`%N` appended to `--array`). |
+| any `sbatch` flag | Any unknown flag is treated as an sbatch option and applied to the merged script (see below). |
 
 The generated script is always written to disk before submission — `sarray.slurm` by default — so you can always inspect what was submitted.
+
+**Submit-time sbatch overrides.** Any flag not recognized by `sarray submit` is passed through as an `#SBATCH` directive in the generated script, overriding whatever the individual jobs had. Useful for options you can't know ahead of time:
+
+```bash
+# Chain two job arrays
+sarray submit --dependency=aftercorr:12345
+
+# Use a reservation you just got
+sarray submit --reservation=my_nodes
+
+# Delay start
+sarray submit --begin=2026-04-04T08:00:00
+```
 
 **CLI flags override `#SBATCH` directives.** For example:
 
